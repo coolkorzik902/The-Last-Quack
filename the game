@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Quack or Die: The Nightmare</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #game-wrapper { width: 1920px; height: 1080px; position: relative; background: #000; border: 12px solid #1a1a1a; transform-origin: center; overflow: hidden; }
+        
+        /* МОНСТР */
+        .xenomorph { position: absolute; bottom: 0; width: 700px; height: 1000px; left: 50%; transform: translateX(-50%); z-index: 5; display: none; filter: brightness(0.2); pointer-events: none; }
+        .xeno-body { width: 100%; height: 100%; background: #050505; clip-path: polygon(50% 5%, 80% 20%, 90% 50%, 80% 95%, 20% 95%, 10% 50%, 20% 20%); }
+        .eye-glow { position: absolute; top: 180px; width: 50px; height: 15px; background: #f00; border-radius: 50%; box-shadow: 0 0 50px 15px #f00; animation: blink 0.8s infinite alternate; }
+
+        /* МІНІГРА */
+        #wires-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.98); display: none; z-index: 2000; flex-direction: column; justify-content: center; align-items: center; }
+        .wires-panel { width: 800px; height: 600px; background: #222; border: 10px solid #444; display: flex; justify-content: space-between; padding: 50px; }
+        .wire-side { display: flex; flex-direction: column; justify-content: space-around; }
+        .wire-node { width: 70px; height: 45px; cursor: pointer; border: 4px solid #000; }
+        .wire-node.selected { border-color: white; box-shadow: 0 0 20px white; }
+
+        #jumpscare-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #200; display: none; z-index: 3000; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        #viewport { width: 100%; height: 100%; position: relative; transition: transform 0.3s ease-out; }
+        .room-bg { position: absolute; width: 300%; height: 100%; left: -100%; display: flex; }
+        .zone { width: 33.33%; height: 100%; position: relative; background: #050505; border: 4px solid #111; }
+        .zone.light-on { background: #1a1a1a !important; box-shadow: inset 0 0 200px #000; }
+        .door-frame { position: absolute; bottom: 0; width: 700px; height: 100%; left: 50%; transform: translateX(-50%); background: #000; overflow: hidden; }
+        .door { width: 100%; height: 100%; background: #151515; border: 35px solid #222; transition: transform 0.15s ease-in; z-index: 10; pointer-events: none; }
+        .door.open { transform: translateY(-93%); }
+        .door.closed { transform: translateY(0); }
+
+        .duck-container { width: 450px; height: 450px; background: #f1c40f; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative; cursor: pointer; transition: transform 0.1s; }
+        .duck-container:active { transform: scale(0.85); }
+        .duck-eye { position: absolute; width: 50px; height: 50px; background: #000; border-radius: 50%; top: 120px; left: 110px; }
+        .duck-eye.right { left: 290px; }
+        .duck-beak { position: absolute; width: 130px; height: 90px; background: #e67e22; border-radius: 45px; top: 200px; left: 160px; }
+        #quack-text { position: absolute; top: -100px; width: 100%; text-align: center; font-size: 90px; color: #f1c40f; opacity: 0; transition: 0.2s; font-weight: bold; }
+
+        #hud { position: absolute; top: 30px; width: 100%; display: flex; justify-content: space-around; font-size: 55px; z-index: 100; pointer-events: none; }
+        .nav-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 400px; z-index: 100; }
+        .btn-nav { background: #111; color: #0f0; border: 3px solid #0f0; padding: 20px 50px; cursor: pointer; font-size: 24px; font-family: inherit; }
+        @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+    </style>
+</head>
+<body onkeydown="handleKey(event, true)" onkeyup="handleKey(event, false)">
+
+<div id="game-wrapper">
+    <div id="wires-screen">
+        <h1 style="color:red;">SYSTEM FAILURE</h1>
+        <div class="wires-panel"><div class="wire-side" id="left-wires"></div><div class="wire-side" id="right-wires"></div></div>
+    </div>
+
+    <div id="jumpscare-overlay"><h1>YOU DIED</h1><p>THE ENTITY GOT YOU</p></div>
+
+    <div id="hud">
+        <div id="game-time">12:00 AM</div>
+        <div style="color: #f0f;">PSYCHE: <span id="health-val">100</span>%</div>
+        <div style="color: #0ff;">POWER: <span id="energy-val">100</span>%</div>
+    </div>
+
+    <div id="viewport">
+        <div class="room-bg">
+            <div class="zone" id="zone-left">
+                <div class="door-frame" onmousedown="setDoor('l', true)" onmouseup="setDoor('l', false)">
+                    <div id="xeno-left" class="xenomorph"><div class="xeno-body"></div><div class="eye-glow" style="left:170px;"></div><div class="eye-glow" style="right:170px;"></div></div>
+                    <div id="door-l" class="door open"></div>
+                </div>
+            </div>
+            <div class="zone" style="display:flex; justify-content:center; align-items:center;">
+                <div class="duck-container" onmousedown="duckAction()" onmouseup="stopHealing()" onmouseleave="stopHealing()">
+                    <div id="quack-text">QUACK!</div>
+                    <div class="duck-eye"></div><div class="duck-eye right"></div><div class="duck-beak"></div>
+                </div>
+            </div>
+            <div class="zone" id="zone-right">
+                <div class="door-frame" onmousedown="setDoor('r', true)" onmouseup="setDoor('r', false)">
+                    <div id="xeno-right" class="xenomorph"><div class="xeno-body"></div><div class="eye-glow" style="left:170px;"></div><div class="eye-glow" style="right:170px;"></div></div>
+                    <div id="door-r" class="door open"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-controls">
+        <button class="btn-nav" onclick="move('left')">LEFT</button>
+        <button class="btn-nav" onclick="move('center')">DUCK</button>
+        <button class="btn-nav" onclick="move('right')">RIGHT</button>
+    </div>
+</div>
+
+<script>
+    let psyche = 100, energy = 100, monsterSide = "", currentZone = "center", isFlashlight = false;
+    let hour = 12, hourIdx = 0, minute = 0, attackTimer = null;
+    let doors = { l: false, r: false };
+    const colors = ['red', 'blue', 'yellow', 'lime'];
+
+    function rescale() {
+        const s = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+        document.getElementById('game-wrapper').style.transform = `scale(${s})`;
+    }
+    window.addEventListener('resize', rescale); rescale();
+
+    function move(to) {
+        currentZone = to;
+        document.getElementById('viewport').style.transform = `translateX(${(to==='left'?1920:to==='right'?-1920:0)}px)`;
+        updateXenoVisibility();
+    }
+
+    function handleKey(e, isDown) {
+        if (e.code === 'KeyF' && energy > 0) {
+            isFlashlight = isDown;
+            const z = document.getElementById('zone-' + currentZone);
+            if (z && currentZone !== 'center') isFlashlight ? z.classList.add('light-on') : z.classList.remove('light-on');
+            updateXenoVisibility();
+        }
+    }
+
+    function setDoor(side, isClosed) {
+        if (energy > 0) {
+            doors[side] = isClosed;
+            document.getElementById('door-' + side).className = isClosed ? "door closed" : "door open";
+            updateXenoVisibility();
+        }
+    }
+
+    function duckAction() {
+        const q = document.getElementById('quack-text');
+        q.style.opacity = '1'; q.style.top = '-150px';
+        setTimeout(() => { q.style.opacity = '0'; q.style.top = '-100px'; }, 200);
+        startHealing();
+    }
+
+    function startHealing() { 
+        clearInterval(window.hInt);
+        window.hInt = setInterval(() => { if(psyche < 100) psyche += 8; }, 150); 
+    }
+    function stopHealing() { clearInterval(window.hInt); }
+
+    function updateXenoVisibility() {
+        const showL = (isFlashlight && monsterSide === 'left' && currentZone === 'left' && !doors.l);
+        const showR = (isFlashlight && monsterSide === 'right' && currentZone === 'right' && !doors.r);
+        document.getElementById('xeno-left').style.display = showL ? 'block' : 'none';
+        document.getElementById('xeno-right').style.display = showR ? 'block' : 'none';
+
+        if ((showL || showR) && !attackTimer) {
+            attackTimer = setTimeout(() => {
+                document.getElementById('jumpscare-overlay').style.display = 'flex';
+                setTimeout(() => location.reload(), 2000);
+            }, 800);
+        } else if (!showL && !showR) {
+            clearTimeout(attackTimer); attackTimer = null;
+        }
+    }
+
+    // GAME LOOP
+    setInterval(() => {
+        minute += 2;
+        if (minute >= 60) { minute = 0; hour = (hour === 12) ? 1 : hour + 1; hourIdx++; }
+        document.getElementById('game-time').innerText = `${hour}:${minute < 10 ? '0' + minute : minute} AM`;
+
+        psyche -= 0.5;
+        if (isFlashlight) energy -= 5.4;
+        if (doors.l) energy -= 4.5;
+        if (doors.r) energy -= 4.5;
+
+        if (energy <= 0 && document.getElementById('wires-screen').style.display !== 'flex') {
+            energy = 0; isFlashlight = false; setDoor('l', false); setDoor('r', false); initWires();
+        }
+
+        if (hourIdx >= 1 && monsterSide !== "" && !doors[monsterSide === 'left' ? 'l' : 'r']) psyche -= 10;
+
+        document.getElementById('health-val').innerText = Math.floor(psyche);
+        document.getElementById('energy-val').innerText = Math.max(0, Math.floor(energy));
+        if (psyche <= 0) { document.getElementById('jumpscare-overlay').style.display = 'flex'; setTimeout(() => location.reload(), 2000); }
+    }, 1000);
+
+    // MONSTER AI
+    setInterval(() => {
+        if (hourIdx >= 1 && monsterSide === "") {
+            if (Math.random() < 0.3) monsterSide = Math.random() > 0.5 ? "left" : "right";
+        } else if (monsterSide !== "" && doors[monsterSide === 'left' ? 'l' : 'r']) {
+            if (Math.random() > 0.6) { monsterSide = ""; updateXenoVisibility(); }
+        }
+    }, 3000);
+
+    function initWires() {
+        const lBox = document.getElementById('left-wires'), rBox = document.getElementById('right-wires');
+        lBox.innerHTML = ''; rBox.innerHTML = ''; let fixed = 0, selected = null;
+        let lC = [...colors].sort(() => Math.random()-0.5), rC = [...colors].sort(() => Math.random()-0.5);
+        lC.forEach(c => {
+            const n = document.createElement('div'); n.className = 'wire-node'; n.style.background = c;
+            n.onclick = () => { selected = c; document.querySelectorAll('#left-wires .wire-node').forEach(e=>e.classList.remove('selected')); n.classList.add('selected'); };
+            lBox.appendChild(n);
+        });
+        rC.forEach(c => {
+            const n = document.createElement('div'); n.className = 'wire-node'; n.style.background = c;
+            n.onclick = () => { if(selected === c) { n.style.visibility = 'hidden'; document.querySelectorAll('#left-wires .wire-node').forEach(e=>{if(e.style.background===c)e.style.visibility='hidden'}); fixed++; if(fixed===4){energy=35; document.getElementById('wires-screen').style.display='none';} } selected = null; };
+            rBox.appendChild(n);
+        });
+        document.getElementById('wires-screen').style.display = 'flex';
+    }
+</script>
+</body>
+</html>
