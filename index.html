@@ -3,76 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Last Quack | Emergency Protocol</title>
+    <title>The Last Quack</title>
     <style>
-        * { box-sizing: border-box; touch-action: manipulation; }
-        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; }
         
-        #game-wrapper { width: 1920px; height: 1080px; position: relative; background: #000; border: 12px solid #1a1a1a; transform-origin: center; overflow: hidden; }
+        /* Авто-масштабування під екран телефону */
+        #game-wrapper { 
+            width: 1920px; height: 1080px; 
+            position: relative; background: #000; 
+            border: 10px solid #1a1a1a; 
+            transform-origin: center; 
+        }
 
-        /* WAKE UP EFFECT */
-        #wake-up-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 6000; pointer-events: none; display: none;
-        }
-        .eyelid {
-            position: absolute; width: 100%; height: 50%; background: #000;
-            transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .eyelid-top { top: 0; transform: translateY(0); }
-        .eyelid-bottom { bottom: 0; transform: translateY(0); }
+        /* Ефект повік */
+        #wake-up-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 6000; display: none; }
+        .eyelid { position: absolute; width: 100%; height: 50%; background: #000; transition: transform 2.5s ease-in-out; }
+        .eyelid-top { top: 0; } .eyelid-bottom { bottom: 0; }
         .waking-up .eyelid-top { transform: translateY(-100%); }
         .waking-up .eyelid-bottom { transform: translateY(100%); }
 
-        /* MAIN MENU */
-        #start-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #1a0505 0%, #000 100%);
-            z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; border: 20px solid #111;
-        }
-        .title { font-size: 160px; color: #f1c40f; text-shadow: 0 0 20px #f1c40f, 5px 5px 0px #e67e22; margin: 0; animation: title-flicker 3s infinite; text-transform: uppercase; font-weight: 900; }
-        .subtitle { font-size: 35px; color: #666; margin-bottom: 50px; letter-spacing: 15px; }
-        .instructions { background: rgba(0,0,0,0.8); padding: 40px; border: 2px solid #333; color: #aaa; font-size: 26px; line-height: 1.8; margin-bottom: 50px; text-align: left; max-width: 1000px; }
-        .highlight { color: #f1c40f; }
-        .btn-start { background: transparent; color: #f1c40f; border: 5px solid #f1c40f; padding: 35px 100px; font-size: 45px; cursor: pointer; font-family: inherit; transition: 0.4s; text-transform: uppercase; font-weight: bold; }
-        .btn-start:hover { background: #f1c40f; color: #000; box-shadow: 0 0 60px #f1c40f; }
+        /* Меню */
+        #start-screen { position: absolute; inset: 0; background: radial-gradient(circle, #1a0505 0%, #000 100%); z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .title { font-size: 140px; color: #f1c40f; text-shadow: 0 0 20px #f1c40f; margin: 0; animation: flicker 3s infinite; }
+        .btn-start { background: transparent; color: #f1c40f; border: 5px solid #f1c40f; padding: 30px 80px; font-size: 50px; cursor: pointer; font-weight: bold; margin-top: 40px; }
 
-        /* VIEWPORT */
-        #viewport { width: 100%; height: 100%; position: relative; transition: transform 0.3s ease-out, filter 3s ease-out; filter: blur(25px); }
+        /* Ігровий світ */
+        #viewport { width: 100%; height: 100%; position: relative; transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), filter 3s; filter: blur(30px); }
         .room-bg { position: absolute; width: 300%; height: 100%; left: -100%; display: flex; }
-        .zone { width: 33.33%; height: 100%; position: relative; background: #030303; border: 4px solid #0a0a0a; }
-        .zone.light-on { background: #151515 !important; box-shadow: inset 0 0 300px #000; }
+        .zone { width: 33.33%; height: 100%; position: relative; background: #050505; border: 2px solid #111; }
+        .zone.light-on { background: #1a1a1a !important; box-shadow: inset 0 0 400px #000; }
         
-        .door-frame { position: absolute; bottom: 0; width: 700px; height: 100%; left: 50%; transform: translateX(-50%); background: #000; overflow: hidden; }
-        .door { width: 100%; height: 100%; background: #111; border: 40px solid #1a1a1a; transition: transform 0.15s ease-in; z-index: 10; pointer-events: none; }
-        .door.open { transform: translateY(-94%); }
+        /* Двері */
+        .door-frame { position: absolute; bottom: 0; width: 800px; height: 100%; left: 50%; transform: translateX(-50%); background: #020202; cursor: pointer; }
+        .door { width: 100%; height: 100%; background: #111; border: 40px solid #1a1a1a; transition: transform 0.2s ease; z-index: 10; pointer-events: none; }
+        .door.open { transform: translateY(-92%); }
         .door.closed { transform: translateY(0); }
 
-        .duck-container { width: 450px; height: 450px; background: #f1c40f; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative; cursor: pointer; transition: transform 0.1s; }
-        .duck-container:active { transform: scale(0.85); }
-        .duck-eye { position: absolute; width: 50px; height: 50px; background: #000; border-radius: 50%; top: 120px; left: 110px; }
-        .duck-eye.right { left: 290px; }
-        .duck-beak { position: absolute; width: 130px; height: 90px; background: #e67e22; border-radius: 45px; top: 200px; left: 160px; }
+        /* Качка */
+        .duck-container { width: 500px; height: 500px; background: #f1c40f; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative; cursor: pointer; }
+        .duck-eye { position: absolute; width: 50px; height: 50px; background: #000; border-radius: 50%; top: 120px; left: 120px; }
+        .duck-eye.right { left: 330px; }
+        .duck-beak { position: absolute; width: 140px; height: 100px; background: #e67e22; border-radius: 50px; top: 210px; left: 180px; }
+        #quack-text { position: absolute; top: -130px; width: 100%; text-align: center; font-size: 110px; color: #f1c40f; opacity: 0; font-weight: bold; }
 
-        #hud { position: absolute; top: 30px; width: 100%; display: flex; justify-content: space-around; font-size: 60px; z-index: 100; pointer-events: none; opacity: 0; transition: 2s; font-weight: bold;}
-        .nav-controls { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; gap: 50px; z-index: 100; opacity: 0; transition: 2s;}
-        .btn-nav { background: #050505; color: #f1c40f; border: 3px solid #f1c40f; padding: 30px 60px; cursor: pointer; font-size: 30px; font-family: inherit; font-weight: bold; }
+        /* HUD & Керування */
+        #hud { position: absolute; top: 40px; width: 100%; display: flex; justify-content: space-around; font-size: 60px; z-index: 100; opacity: 0; transition: 2s; font-weight: bold; pointer-events: none; }
+        .nav-controls { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: center; gap: 30px; z-index: 100; opacity: 0; transition: 2s; }
+        .btn-nav { background: rgba(0,0,0,0.8); color: #f1c40f; border: 4px solid #f1c40f; padding: 30px 50px; font-size: 35px; font-family: inherit; font-weight: bold; border-radius: 10px; }
 
-        /* MONSTER & WIRES */
-        .xenomorph { position: absolute; bottom: 0; width: 700px; height: 1000px; left: 50%; transform: translateX(-50%); z-index: 5; display: none; filter: brightness(0.2); pointer-events: none; }
-        .xeno-body { width: 100%; height: 100%; background: #080808; clip-path: polygon(50% 5%, 80% 20%, 95% 50%, 80% 95%, 20% 95%, 5% 50%, 20% 20%); }
-        .eye-glow { position: absolute; top: 180px; width: 50px; height: 15px; background: #f00; border-radius: 50%; box-shadow: 0 0 50px 15px #f00; animation: blink 0.8s infinite alternate; }
-        
-        #wires-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 5, 0.99); display: none; z-index: 2000; flex-direction: column; justify-content: center; align-items: center; }
-        .wires-panel { width: 800px; height: 600px; background: #1a1a1a; border: 10px solid #333; display: flex; justify-content: space-between; padding: 50px; }
-        .wire-side { display: flex; flex-direction: column; justify-content: space-around; }
-        .wire-node { width: 75px; height: 50px; cursor: pointer; border: 5px solid #000; }
-        
-        #jumpscare-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #100; display: none; z-index: 3000; flex-direction: column; justify-content: center; align-items: center; color: white; font-size: 50px; }
+        /* Монстр */
+        .xenomorph { position: absolute; bottom: 0; width: 800px; height: 1000px; left: 50%; transform: translateX(-50%); z-index: 5; display: none; filter: brightness(0.1); }
+        .eye-glow { position: absolute; top: 200px; width: 60px; height: 20px; background: #f00; border-radius: 50%; box-shadow: 0 0 60px 20px #f00; animation: pulse 0.5s infinite alternate; }
 
-        @keyframes title-flicker { 0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.7; } }
-        @keyframes blink { from { opacity: 1; } to { opacity: 0.2; } }
+        @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
     </style>
 </head>
 <body onkeydown="handleKey(event, true)" onkeyup="handleKey(event, false)">
@@ -85,25 +70,7 @@
 
     <div id="start-screen">
         <h1 class="title">THE LAST QUACK</h1>
-        <p class="subtitle">EXPERIMENTAL SURVIVAL UNIT</p>
-        <div class="instructions">
-            • <span class="highlight">[F] or LIGHT button</span> : FLASHLIGHT<br>
-            • <span class="highlight">HOLD DOOR FRAME</span> : CLOSE DOOR<br>
-            • <span class="highlight">CLICK/TAP DUCK</span> : RESTORE SANITY<br>
-            • <span class="highlight">POWER 0%</span> : FIX THE WIRES<br>
-            • SURVIVE UNTIL 6:00 AM
-        </div>
         <button class="btn-start" onclick="initWakeUp()">WAKE UP</button>
-    </div>
-
-    <div id="wires-screen">
-        <h1 style="color:red; font-size: 60px;">⚡ SYSTEM BREACH: FIX WIRES ⚡</h1>
-        <div class="wires-panel"><div class="wire-side" id="left-wires"></div><div class="wire-side" id="right-wires"></div></div>
-    </div>
-    
-    <div id="jumpscare-overlay">
-        <h1>GAME OVER</h1>
-        <p>THE DUCK HAS BEEN CONSUMED</p>
     </div>
 
     <div id="hud">
@@ -115,20 +82,20 @@
     <div id="viewport">
         <div class="room-bg">
             <div class="zone" id="zone-left">
-                <div class="door-frame" onmousedown="setDoor('l', true)" onmouseup="setDoor('l', false)" ontouchstart="setDoor('l', true)" ontouchend="setDoor('l', false)">
-                    <div id="xeno-left" class="xenomorph"><div class="xeno-body"></div><div class="eye-glow" style="left:170px;"></div><div class="eye-glow" style="right:170px;"></div></div>
+                <div class="door-frame" ontouchstart="setDoor('l', true)" ontouchend="setDoor('l', false)" onmousedown="setDoor('l', true)" onmouseup="setDoor('l', false)">
+                    <div id="xeno-left" class="xenomorph"><div class="eye-glow" style="left:200px;"></div><div class="eye-glow" style="right:200px;"></div></div>
                     <div id="door-l" class="door open"></div>
                 </div>
             </div>
             <div class="zone" style="display:flex; justify-content:center; align-items:center;">
-                <div class="duck-container" onmousedown="duckAction()" onmouseup="stopHealing()" ontouchstart="duckAction()" ontouchend="stopHealing()">
-                    <div id="quack-text" style="position: absolute; top:-120px; width:100%; text-align:center; font-size:100px; color:#f1c40f; opacity:0; transition:0.2s; font-weight:bold; pointer-events: none;">QUACK!</div>
+                <div class="duck-container" ontouchstart="duckAction()" ontouchend="stopHealing()" onmousedown="duckAction()" onmouseup="stopHealing()">
+                    <div id="quack-text">QUACK!</div>
                     <div class="duck-eye"></div><div class="duck-eye right"></div><div class="duck-beak"></div>
                 </div>
             </div>
             <div class="zone" id="zone-right">
-                <div class="door-frame" onmousedown="setDoor('r', true)" onmouseup="setDoor('r', false)" ontouchstart="setDoor('r', true)" ontouchend="setDoor('r', false)">
-                    <div id="xeno-right" class="xenomorph"><div class="xeno-body"></div><div class="eye-glow" style="left:170px;"></div><div class="eye-glow" style="right:170px;"></div></div>
+                <div class="door-frame" ontouchstart="setDoor('r', true)" ontouchend="setDoor('r', false)" onmousedown="setDoor('r', true)" onmouseup="setDoor('r', false)">
+                    <div id="xeno-right" class="xenomorph"><div class="eye-glow" style="left:200px;"></div><div class="eye-glow" style="right:200px;"></div></div>
                     <div id="door-r" class="door open"></div>
                 </div>
             </div>
@@ -137,151 +104,109 @@
 
     <div class="nav-controls">
         <button class="btn-nav" onclick="move('left')">LEFT</button>
-        <button class="btn-nav" style="border-color: #ff0; color: #ff0;" 
-                onmousedown="handleKey({code:'KeyF'}, true)" onmouseup="handleKey({code:'KeyF'}, false)"
-                ontouchstart="handleKey({code:'KeyF'}, true)" ontouchend="handleKey({code:'KeyF'}, false)">LIGHT</button>
-        <button class="btn-nav" onclick="move('center')">THE DUCK</button>
+        <button class="btn-nav" style="color: #ff0; border-color: #ff0;" ontouchstart="handleKey({code:'KeyF'}, true)" ontouchend="handleKey({code:'KeyF'}, false)">LIGHT</button>
+        <button class="btn-nav" onclick="move('center')">DUCK</button>
         <button class="btn-nav" onclick="move('right')">RIGHT</button>
     </div>
 </div>
 
 <script>
     let psyche = 100, energy = 100, monsterSide = "", currentZone = "center", isFlashlight = false;
-    let hour = 12, hourIdx = 0, minute = 0, attackTimer = null, gameStarted = false;
+    let hour = 12, hourIdx = 0, minute = 0, gameStarted = false;
     let doors = { l: false, r: false };
-    const colors = ['red', 'blue', 'yellow', 'lime'];
+
+    function rescale() {
+        const wrapper = document.getElementById('game-wrapper');
+        const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+        wrapper.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', rescale);
+    rescale();
 
     function initWakeUp() {
         document.getElementById('start-screen').style.display = 'none';
         const overlay = document.getElementById('wake-up-overlay');
-        const viewport = document.getElementById('viewport');
         overlay.style.display = 'block';
         setTimeout(() => {
             overlay.classList.add('waking-up');
-            viewport.style.filter = 'blur(0px)';
+            document.getElementById('viewport').style.filter = 'blur(0px)';
             document.getElementById('hud').style.opacity = '1';
             document.querySelector('.nav-controls').style.opacity = '1';
         }, 100);
-        setTimeout(() => { overlay.style.display = 'none'; startGame(); }, 3100);
+        setTimeout(() => { overlay.style.display = 'none'; startGame(); }, 3000);
     }
 
-    function startGame() { gameStarted = true; initGameLoops(); }
+    function startGame() {
+        gameStarted = true;
+        setInterval(() => {
+            if (!gameStarted) return;
+            minute += 2;
+            if (minute >= 60) { minute = 0; hour = (hour === 12) ? 1 : hour + 1; hourIdx++; }
+            document.getElementById('game-time').innerText = `${hour}:${minute < 10 ? '0' + minute : minute} AM`;
+            
+            if (isFlashlight) energy -= 1.5;
+            if (doors.l) energy -= 1.2;
+            if (doors.r) energy -= 1.2;
+            psyche -= 0.3;
 
-    function rescale() {
-        const s = Math.min(window.innerWidth/1920, window.innerHeight/1080);
-        document.getElementById('game-wrapper').style.transform = `scale(${s})`;
+            if (energy <= 0) { energy = 0; isFlashlight = false; setDoor('l', false); setDoor('r', false); }
+            
+            document.getElementById('energy-val').innerText = Math.floor(energy);
+            document.getElementById('health-val').innerText = Math.floor(psyche);
+            
+            if (psyche <= 0) location.reload();
+            if (hour === 6) { alert("SURVIVED!"); location.reload(); }
+        }, 1000);
+
+        setInterval(() => {
+            if (monsterSide === "" && Math.random() < 0.3) monsterSide = Math.random() > 0.5 ? "left" : "right";
+            else if (monsterSide !== "" && doors[monsterSide === 'left' ? 'l' : 'r']) {
+                if (Math.random() > 0.7) monsterSide = "";
+            }
+            updateVisuals();
+        }, 3000);
     }
-    window.addEventListener('resize', rescale); rescale();
 
     function move(to) {
-        if(!gameStarted) return;
         currentZone = to;
-        document.getElementById('viewport').style.transform = `translateX(${(to==='left'?1920:to==='right'?-1920:0)}px)`;
-        updateXenoVisibility();
+        const offset = to === 'left' ? 1920 : (to === 'right' ? -1920 : 0);
+        document.getElementById('viewport').style.transform = `translateX(${offset}px)`;
+        updateVisuals();
     }
 
     function handleKey(e, isDown) {
-        if (!gameStarted) return;
         if (e.code === 'KeyF') {
-            if (energy > 0) {
-                isFlashlight = isDown;
-                const z = document.getElementById('zone-' + currentZone);
-                if (z && currentZone !== 'center') isDown ? z.classList.add('light-on') : z.classList.remove('light-on');
-            } else {
-                isFlashlight = false;
-                document.querySelectorAll('.zone').forEach(z => z.classList.remove('light-on'));
-            }
-            updateXenoVisibility();
+            isFlashlight = isDown && energy > 0;
+            updateVisuals();
         }
     }
 
     function setDoor(side, isClosed) {
-        if (energy > 0 && gameStarted) {
-            doors[side] = isClosed;
-            document.getElementById('door-' + side).className = isClosed ? "door closed" : "door open";
-            updateXenoVisibility();
+        if (energy <= 0) isClosed = false;
+        doors[side] = isClosed;
+        document.getElementById('door-' + side).className = isClosed ? "door closed" : "door open";
+        updateVisuals();
+    }
+
+    function updateVisuals() {
+        document.querySelectorAll('.zone').forEach(z => z.classList.remove('light-on'));
+        if (isFlashlight && currentZone !== 'center') {
+            document.getElementById('zone-' + currentZone).classList.add('light-on');
         }
+        
+        const showL = isFlashlight && monsterSide === 'left' && currentZone === 'left' && !doors.l;
+        const showR = isFlashlight && monsterSide === 'right' && currentZone === 'right' && !doors.r;
+        document.getElementById('xeno-left').style.display = showL ? 'block' : 'none';
+        document.getElementById('xeno-right').style.display = showR ? 'block' : 'none';
     }
 
     function duckAction() {
-        if(!gameStarted) return;
-        const q = document.getElementById('quack-text');
-        q.style.opacity = '1'; q.style.top = '-160px';
-        setTimeout(() => { q.style.opacity = '0'; q.style.top = '-120px'; }, 200);
-        startHealing();
-    }
-
-    function startHealing() { 
-        clearInterval(window.hInt);
-        window.hInt = setInterval(() => { if(psyche < 100) psyche += 9; }, 150); 
+        const txt = document.getElementById('quack-text');
+        txt.style.opacity = 1;
+        setTimeout(() => txt.style.opacity = 0, 300);
+        window.hInt = setInterval(() => { if (psyche < 100) psyche += 5; }, 100);
     }
     function stopHealing() { clearInterval(window.hInt); }
-
-    function updateXenoVisibility() {
-        const showL = (isFlashlight && monsterSide === 'left' && currentZone === 'left' && !doors.l);
-        const showR = (isFlashlight && monsterSide === 'right' && currentZone === 'right' && !doors.r);
-        document.getElementById('xeno-left').style.display = showL ? 'block' : 'none';
-        document.getElementById('xeno-right').style.display = showR ? 'block' : 'none';
-
-        if ((showL || showR) && !attackTimer) {
-            attackTimer = setTimeout(() => {
-                document.getElementById('jumpscare-overlay').style.display = 'flex';
-                setTimeout(() => location.reload(), 2500);
-            }, 850);
-        } else if (!showL && !showR) {
-            clearTimeout(attackTimer); attackTimer = null;
-        }
-    }
-
-    function initGameLoops() {
-        setInterval(() => {
-            minute += 2;
-            if (minute >= 60) { minute = 0; hour = (hour === 12) ? 1 : hour + 1; hourIdx++; }
-            document.getElementById('game-time').innerText = `${hour}:${minute < 10 ? '0' + minute : minute} AM`;
-
-            psyche -= 0.6;
-            if (isFlashlight) energy -= 5.8;
-            if (doors.l) energy -= 5.0;
-            if (doors.r) energy -= 5.0;
-
-            if (energy <= 0 && document.getElementById('wires-screen').style.display !== 'flex') {
-                energy = 0; isFlashlight = false; 
-                document.querySelectorAll('.zone').forEach(z => z.classList.remove('light-on'));
-                setDoor('l', false); setDoor('r', false); initWires();
-            }
-            if (hourIdx >= 1 && monsterSide !== "" && !doors[monsterSide === 'left' ? 'l' : 'r']) psyche -= 12;
-
-            document.getElementById('health-val').innerText = Math.floor(psyche);
-            document.getElementById('energy-val').innerText = Math.max(0, Math.floor(energy));
-            if (psyche <= 0) { document.getElementById('jumpscare-overlay').style.display = 'flex'; setTimeout(() => location.reload(), 2500); }
-            if (hour === 6) { alert("6:00 AM - MISSION SUCCESSFUL"); location.reload(); }
-        }, 1000);
-
-        setInterval(() => {
-            if (hourIdx >= 1 && monsterSide === "") {
-                if (Math.random() < 0.35) monsterSide = Math.random() > 0.5 ? "left" : "right";
-            } else if (monsterSide !== "" && doors[monsterSide === 'left' ? 'l' : 'r']) {
-                if (Math.random() > 0.65) { monsterSide = ""; updateXenoVisibility(); }
-            }
-        }, 3000);
-    }
-
-    function initWires() {
-        const lBox = document.getElementById('left-wires'), rBox = document.getElementById('right-wires');
-        lBox.innerHTML = ''; rBox.innerHTML = ''; let fixed = 0, selected = null;
-        let lC = [...colors].sort(() => Math.random()-0.5), rC = [...colors].sort(() => Math.random()-0.5);
-        lC.forEach(c => {
-            const n = document.createElement('div'); n.className = 'wire-node'; n.style.background = c;
-            n.onclick = () => { selected = c; document.querySelectorAll('#left-wires .wire-node').forEach(e=>e.classList.remove('selected')); n.classList.add('selected'); };
-            lBox.appendChild(n);
-        });
-        rC.forEach(c => {
-            const n = document.createElement('div'); n.className = 'wire-node'; n.style.background = c;
-            n.onclick = () => { if(selected === c) { n.style.visibility = 'hidden'; document.querySelectorAll('#left-wires .wire-node').forEach(e=>{if(e.style.background===c)e.style.visibility='hidden'}); fixed++; if(fixed===4){energy=45; document.getElementById('wires-screen').style.display='none';} } selected = null; };
-            rBox.appendChild(n);
-        });
-        document.getElementById('wires-screen').style.display = 'flex';
-    }
 </script>
 </body>
 </html>
